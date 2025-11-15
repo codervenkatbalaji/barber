@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>V2 BARBER - Income</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #0f0f0f; --card: #1a1a1a; --accent: #00ff9d; --accent-dark: #00cc7a; --text: #e0e0e0; --border: rgba(0, 255, 157, 0.3); }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 20px; }
+        .container { max-width: 400px; margin: 0 auto; background: var(--card); border-radius: 20px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
+        header { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: #000; padding: 18px; text-align: center; font-size: 1.5rem; font-weight: 600; letter-spacing: 1px; }
+        .income-area { padding: 20px; }
+        .summary-card { background: #252525; border-radius: 16px; padding: 18px; margin-bottom: 20px; border: 1px solid var(--border); text-align: center; }
+        .summary-title { font-size: 0.95rem; color: #ccc; margin-bottom: 8px; }
+        .summary-amount { font-size: 2rem; font-weight: 700; color: var(--accent); text-shadow: 0 0 10px rgba(0,255,157,0.3); }
+        .filter-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab { flex: 1; padding: 12px; background: #252525; color: var(--text); border: 1.5px solid var(--border); border-radius: 12px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: 0.3s; text-align: center; }
+        .tab.active { background: var(--accent); color: #000; border-color: var(--accent); }
+        .bills-list { max-height: 380px; overflow-y: auto; background: #222; border-radius: 14px; padding: 14px; font-size: 0.9rem; }
+        .bill-item { padding: 12px 0; border-bottom: 1px dashed #444; display: flex; justify-content: space-between; align-items: center; }
+        .bill-item:last-child { border: none; }
+        .bill-left { flex: 1; }
+        .bill-amount { font-weight: 600; color: var(--accent); }
+        .bill-time { font-size: 0.8rem; color: #aaa; margin-top: 2px; }
+        .bill-services { font-size: 0.85rem; color: #ccc; margin-top: 4px; }
+        .no-bills { text-align: center; color: #666; padding: 30px 0; font-size: 0.95rem; }
+        .btn { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: #000; border: none; border-radius: 14px; font-size: 1.1rem; font-weight: 600; cursor: pointer; margin-top: 15px; transition: 0.3s; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,255,157,0.4); }
+        .footer { text-align: center; margin-top: 25px; color: #666; font-size: 0.8rem; }
+        .bills-list::-webkit-scrollbar { width: 6px; }
+        .bills-list::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>INCOME DASHBOARD</header>
+
+    <div class="income-area">
+        <div class="summary-card">
+            <div class="summary-title">Today's Income</div>
+            <div class="summary-amount" id="todayIncome">₹0</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-title">This Month</div>
+            <div class="summary-amount" id="monthIncome">₹0</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-title">Total Ever</div>
+            <div class="summary-amount" id="totalIncome">₹0</div>
+        </div>
+
+        <div class="filter-tabs">
+            <div class="tab active" onclick="filterBills('today')">Today</div>
+            <div class="tab" onclick="filterBills('month')">Month</div>
+            <div class="tab" onclick="filterBills('all')">All</div>
+        </div>
+
+        <div class="bills-list" id="billsList">
+            <div class="no-bills">No bills recorded yet.</div>
+        </div>
+
+        <button class="btn" onclick="window.location.href='home.html'">Back to Billing</button>
+    </div>
+
+    <div class="footer">V2 Barber • Income Tracker</div>
+</div>
+
+<script>
+    let allBills = [];
+
+    function loadBills() {
+        const saved = localStorage.getItem('v2barber_bills');
+        allBills = saved ? JSON.parse(saved) : [];
+        updateSummary();
+        filterBills('today');
+    }
+
+    function updateSummary() {
+        const now = new Date();
+        const today = now.toLocaleDateString('en-IN');
+        const thisMonth = now.toLocaleDateString('en-IN').slice(3);
+
+        let todayTotal = 0, monthTotal = 0, grandTotal = 0;
+
+        allBills.forEach(bill => {
+            const billDate = bill.date.split(',')[0];
+            const billMonth = billDate.slice(3);
+            grandTotal += bill.total;
+            if (billDate === today) todayTotal += bill.total;
+            if (billMonth === thisMonth) monthTotal += bill.total;
+        });
+
+        document.getElementById('todayIncome').textContent = `₹${todayTotal}`;
+        document.getElementById('monthIncome').textContent = `₹${monthTotal}`;
+        document.getElementById('totalIncome').textContent = `₹${grandTotal}`;
+    }
+
+    function filterBills(period) {
+        const billsList = document.getElementById('billsList');
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        event.target.classList.add('active');
+
+        let filtered = [];
+        if (period === 'today') {
+            const today = new Date().toLocaleDateString('en-IN');
+            filtered = allBills.filter(b => b.date.startsWith(today));
+        } else if (period === 'month') {
+            const thisMonth = new Date().toLocaleDateString('en-IN').slice(3);
+            filtered = allBills.filter(b => b.date.split(',')[0].slice(3) === thisMonth);
+        } else {
+            filtered = [...allBills];
+        }
+
+        filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        if (filtered.length === 0) {
+            billsList.innerHTML = '<div class="no-bills">No bills in this period.</div>';
+            return;
+        }
+
+        let html = '';
+        filtered.forEach(bill => {
+            html += `
+                <div class="bill-item">
+                    <div class="bill-left">
+                        <div class="bill-amount">₹${bill.total} <span style="color:#0c0;">(${bill.payment})</span></div>
+                        <div class="bill-time">${bill.date.split(', ')[1]}</div>
+                        <div class="bill-services">${bill.items.map(i => i.name).join(' • ')}</div>
+                    </div>
+                </div>
+            `;
+        });
+        billsList.innerHTML = html;
+    }
+
+    window.onload = loadBills;
+</script>
+
+</body>
+</html>

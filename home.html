@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>V2 BARBER</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f0f0f; --card: #1a1a1a; --accent: #00ff9d; --accent-dark: #00cc7a;
+            --text: #e0e0e0; --border: rgba(0, 255, 157, 0.3); --selected: #00cc7a;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 20px; }
+        .container { max-width: 400px; margin: 0 auto; background: var(--card); border-radius: 20px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
+        header { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: #000; padding: 18px; text-align: center; font-size: 1.5rem; font-weight: 600; letter-spacing: 1px; }
+        .bill-area { padding: 20px; }
+        .menu-title { font-size: 1rem; color: #ccc; margin-bottom: 12px; font-weight: 500; display: flex; justify-content: space-between; align-items: center; }
+        .add-btn { background: #333; color: var(--accent); padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; cursor: pointer; }
+        .service-btn { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 16px 14px; margin-bottom: 8px; background: #252525; border: 1.5px solid transparent; border-radius: 14px; color: var(--text); font-size: 1rem; font-weight: 500; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        .service-btn:hover { background: #2a2a2a; transform: translateY(-1px); }
+        .service-btn.selected { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: #000; border-color: var(--accent); font-weight: 600; box-shadow: 0 4px 15px rgba(0,255,157,0.3); }
+        .service-name { flex: 1; }
+        .service-price { font-weight: 600; }
+        .total { font-size: 1.5rem; font-weight: 700; text-align: right; margin: 22px 0 16px; color: var(--accent); text-shadow: 0 0 8px rgba(0,255,157,0.2); }
+        .payment-mode { display: flex; gap: 10px; margin: 20px 0; }
+        .payment-btn { flex: 1; padding: 15px; font-size: 1.05rem; font-weight: 600; border: 2px solid var(--border); background: transparent; color: var(--text); border-radius: 14px; cursor: pointer; transition: 0.3s; }
+        .payment-btn.selected { background: var(--accent); color: #000; border-color: var(--accent); transform: scale(1.03); }
+        .btn { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: #000; border: none; border-radius: 14px; font-size: 1.15rem; font-weight: 600; cursor: pointer; margin-top: 12px; transition: 0.3s; box-shadow: 0 4px 15px rgba(0,255,157,0.3); }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,255,157,0.4); }
+        .history-btn { background: #333; color: var(--accent); font-size: 0.95rem; margin-top: 15px; }
+        .footer { text-align: center; margin-top: 25px; color: #666; font-size: 0.8rem; }
+
+        /* Popup */
+        .popup-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .popup {
+            background: #1a1a1a; border-radius: 20px; width: 90%; max-width: 380px; padding: 20px; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,255,157,0.2);
+        }
+        .popup-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .popup-title { font-size: 1.3rem; font-weight: 600; color: var(--accent); }
+        .close-btn { background: none; border: none; color: #aaa; font-size: 1.5rem; cursor: pointer; }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; margin-bottom: 6px; color: #ccc; font-size: 0.9rem; }
+        .input-group input { width: 100%; padding: 12px; background: #252525; border: 1.5px solid var(--border); border-radius: 12px; color: #fff; font-size: 1rem; }
+        .input-group input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 10px rgba(0,255,157,0.3); }
+        .popup-btn { background: var(--accent); color: #000; padding: 12px; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 10px; }
+        .service-list { max-height: 200px; overflow-y: auto; margin-top: 10px; }
+        .service-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed #444; }
+        .service-item:last-child { border: none; }
+        .edit-btn, .delete-btn { background: #333; color: var(--accent); border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; }
+        .delete-btn { background: #f004; color: #fff; }
+
+        /* QR Popup */
+        .qr-popup { text-align: center; }
+        .qr-image { width: 220px; height: 220px; margin: 15px auto; background: #fff; padding: 10px; border-radius: 16px; }
+        .qr-amount { font-size: 1.8rem; font-weight: 700; color: var(--accent); margin: 10px 0; }
+        .copy-upi { background: #333; color: var(--accent); padding: 10px; border-radius: 10px; font-size: 0.9rem; margin-top: 15px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>V2 BARBER</header>
+
+    <div class="bill-area">
+        <div class="menu-title">
+            Tap to Select Services
+            <div class="add-btn" onclick="openPopup()">+ Add / Edit</div>
+        </div>
+        <div id="menuList"></div>
+
+        <div class="total" id="total">Total: ₹0</div>
+
+        <div class="payment-mode">
+            <button class="payment-btn" id="cashBtn" onclick="selectPayment('cash')">Cash</button>
+            <button class="payment-btn" id="qrBtn" onclick="selectPayment('qr')">QR / UPI</button>
+        </div>
+
+        <button class="btn" onclick="saveBill()">Save Bill</button>
+        <button class="btn history-btn" onclick="window.location.href='v2barber_income.html'">View Income</button>
+    </div>
+
+    <div class="footer">V2 Barber • Tap & Pay</div>
+</div>
+
+<!-- SERVICE POPUP -->
+<div class="popup-overlay" id="popup">
+    <div class="popup">
+        <div class="popup-header">
+            <div class="popup-title">Manage Services</div>
+            <button class="close-btn" onclick="closePopup()">X</button>
+        </div>
+
+        <div class="input-group">
+            <label>Service Name</label>
+            <input type="text" id="newName" placeholder="e.g. Hair Color">
+        </div>
+        <div class="input-group">
+            <label>Price (₹)</label>
+            <input type="number" id="newPrice" placeholder="250">
+        </div>
+        <button class="popup-btn" onclick="addNewService()">+ Add Service</button>
+
+        <div class="menu-title" style="margin: 20px 0 10px; font-size: 0.95rem;">Existing Services</div>
+        <div class="service-list" id="serviceList"></div>
+    </div>
+</div>
+
+<!-- QR POPUP -->
+<div class="popup-overlay" id="qrPopup">
+    <div class="popup qr-popup">
+        <div class="popup-header">
+            <div class="popup-title">Scan & Pay</div>
+            <button class="close-btn" onclick="closeQrPopup()">X</button>
+        </div>
+        <div class="qr-image" id="qrImage"></div>
+        <div class="qr-amount" id="qrAmount">₹0</div>
+        <div class="copy-upi" onclick="copyUPI()">Click to Copy UPI ID</div>
+    </div>
+</div>
+
+<script>
+    let total = 0;
+    let selectedServices = [];
+    let paymentMode = null;
+
+    const defaultServices = [
+        { name: "Haircut", price: 150 },
+        { name: "Beard Trim", price: 100 },
+        { name: "Haircut + Beard", price: 200 },
+        { name: "Full Grooming", price: 300 },
+        { name: "Head Massage", price: 50 },
+        { name: "Face Clean", price: 80 }
+    ];
+
+    let services = [...defaultServices];
+
+    // === UPI QR CONFIG ===
+    const UPI_ID = "yourname@upi";  // CHANGE THIS TO YOUR UPI ID
+    const QR_API = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=";
+
+    function loadServices() {
+        const saved = localStorage.getItem('v2barber_services');
+        if (saved) services = [...defaultServices, ...JSON.parse(saved)];
+        renderMenu();
+        renderServiceList();
+    }
+
+    function saveServices() {
+        const custom = services.filter(s => !defaultServices.some(d => d.name === s.name));
+        localStorage.setItem('v2barber_services', JSON.stringify(custom));
+    }
+
+    function renderMenu() {
+        const menuList = document.getElementById('menuList');
+        menuList.innerHTML = '';
+        services.forEach((s, index) => {
+            const btn = document.createElement('div');
+            btn.className = 'service-btn';
+            btn.innerHTML = `<span class="service-name">${s.name}</span><span class="service-price">₹${s.price}</span>`;
+            btn.onclick = () => toggleService(btn, index, s.name, s.price);
+            menuList.appendChild(btn);
+        });
+    }
+
+    function toggleService(btn, index, name, price) {
+        const isSelected = btn.classList.contains('selected');
+        if (!isSelected) {
+            btn.classList.add('selected');
+            if (!selectedServices.find(s => s.name === name)) {
+                selectedServices.push({ name, price });
+                total += price;
+            }
+        } else {
+            btn.classList.remove('selected');
+            selectedServices = selectedServices.filter(s => s.name !== name);
+            total -= price;
+        }
+        document.getElementById('total').textContent = `Total: ₹${total}`;
+    }
+
+    function selectPayment(mode) {
+        paymentMode = mode;
+        document.getElementById('cashBtn').classList.remove('selected');
+        document.getElementById('qrBtn').classList.remove('selected');
+        document.getElementById(mode + 'Btn').classList.add('selected');
+
+        if (mode === 'qr' && total > 0) {
+            showQrPopup();
+        }
+    }
+
+    function showQrPopup() {
+        const upiLink = `upi://pay?pa=${UPI_ID}&pn=V2%20Barber&am=${total}&cu=INR`;
+        document.getElementById('qrImage').innerHTML = `<img src="${QR_API}${encodeURIComponent(upiLink)}" alt="QR Code">`;
+        document.getElementById('qrAmount').textContent = `₹${total}`;
+        document.getElementById('qrPopup').style.display = 'flex';
+    }
+
+    function closeQrPopup() {
+        document.getElementById('qrPopup').style.display = 'none';
+    }
+
+    function copyUPI() {
+        navigator.clipboard.writeText(UPI_ID).then(() => {
+            alert('UPI ID copied: ' + UPI_ID);
+        });
+    }
+
+    function saveBill() {
+        if (selectedServices.length === 0) return alert('Select at least one service!');
+        if (!paymentMode) return alert('Select payment mode!');
+
+        const bill = {
+            items: selectedServices,
+            total: total,
+            payment: paymentMode === 'cash' ? 'CASH' : 'QR / UPI',
+            date: new Date().toLocaleString('en-IN')
+        };
+
+        let savedBills = JSON.parse(localStorage.getItem('v2barber_bills') || '[]');
+        savedBills.push(bill);
+        localStorage.setItem('v2barber_bills', JSON.stringify(savedBills));
+
+        alert(`Saved! ₹${total} (${bill.payment})`);
+        resetBill();
+        closeQrPopup();
+    }
+
+    function resetBill() {
+        selectedServices = [];
+        total = 0;
+        document.getElementById('total').textContent = 'Total: ₹0';
+        document.querySelectorAll('.service-btn').forEach(btn => btn.classList.remove('selected'));
+        paymentMode = null;
+        document.getElementById('cashBtn').classList.remove('selected');
+        document.getElementById('qrBtn').classList.remove('selected');
+    }
+
+    // === SERVICE POPUP ===
+    function openPopup() {
+        document.getElementById('popup').style.display = 'flex';
+        renderServiceList();
+    }
+
+    function closePopup() {
+        document.getElementById('popup').style.display = 'none';
+        document.getElementById('newName').value = '';
+        document.getElementById('newPrice').value = '';
+    }
+
+    function addNewService() {
+        const name = document.getElementById('newName').value.trim();
+        const price = parseInt(document.getElementById('newPrice').value);
+
+        if (!name || !price || price <= 0) return alert('Enter valid name & price!');
+
+        if (services.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+            if (!confirm(`${name} already exists. Update price?`)) return;
+            services = services.filter(s => s.name.toLowerCase() !== name.toLowerCase());
+        }
+
+        services.push({ name, price });
+        saveServices();
+        renderMenu();
+        renderServiceList();
+        closePopup();
+        alert(`${name} - ₹${price} added!`);
+    }
+
+    function renderServiceList() {
+        const list = document.getElementById('serviceList');
+        list.innerHTML = '';
+        services.forEach((s, i) => {
+            const div = document.createElement('div');
+            div.className = 'service-item';
+            div.innerHTML = `
+                <span>${s.name} - ₹${s.price}</span>
+                <div>
+                    <button class="edit-btn" onclick="editService(${i})">Edit</button>
+                    <button class="delete-btn" onclick="deleteService(${i})">Delete</button>
+                </div>
+            `;
+            list.appendChild(div);
+        });
+    }
+
+    function editService(index) {
+        const s = services[index];
+        const newName = prompt("New name:", s.name);
+        const newPrice = prompt("New price:", s.price);
+        if (newName && newPrice && !isNaN(newPrice)) {
+            services[index] = { name: newName.trim(), price: parseInt(newPrice) };
+            saveServices();
+            renderMenu();
+            renderServiceList();
+        }
+    }
+
+    function deleteService(index) {
+        if (confirm(`Delete "${services[index].name}"?`)) {
+            services.splice(index, 1);
+            saveServices();
+            renderMenu();
+            renderServiceList();
+        }
+    }
+
+    loadServices();
+</script>
+
+</body>
+</html>
